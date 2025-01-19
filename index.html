@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerJS Audio Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
+</head>
+<body>
+  <h1>PeerJS Audio Chat</h1>
+
+  <label for="my-id">Your ID:</label>
+  <input type="text" id="my-id" readonly>
+
+  <label for="peer-id">Connect to Peer ID:</label>
+  <input type="text" id="peer-id">
+  <button id="connect-btn">Connect</button>
+
+  <p id="status">Status: Disconnected</p>
+
+  <script>
+    // Настройки TURN-сервера
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:45.151.144.247:3478' },
+        { urls: 'turn:45.151.144.247:3478', username: 'root', credential: 'root' },
+        { urls: 'turns:45.151.144.247:5349', username: 'root', credential: 'root' },
+      ],
+    };
+
+    // Создание PeerJS соединения
+    const peer = new Peer(null, {
+      config: configuration,
+      debug: 2,
+    });
+
+    const myIdInput = document.getElementById('my-id');
+    const peerIdInput = document.getElementById('peer-id');
+    const connectBtn = document.getElementById('connect-btn');
+    const status = document.getElementById('status');
+
+    // Обработка успешного создания PeerJS ID
+    peer.on('open', id => {
+      myIdInput.value = id;
+    });
+
+    // Обработка входящего соединения
+    peer.on('call', call => {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then(stream => {
+          call.answer(stream); // Ответ с аудиопотоком
+
+          call.on('stream', remoteStream => {
+            playAudio(remoteStream);
+          });
+        })
+        .catch(err => {
+          console.error('Error accessing media devices:', err);
+        });
+    });
+
+    // Установка события на кнопку "Connect"
+    connectBtn.addEventListener('click', () => {
+      const peerId = peerIdInput.value;
+      if (!peerId) {
+        alert('Please enter a peer ID to connect.');
+        return;
+      }
+
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then(stream => {
+          const call = peer.call(peerId, stream);
+
+          call.on('stream', remoteStream => {
+            playAudio(remoteStream);
+          });
+        })
+        .catch(err => {
+          console.error('Error accessing media devices:', err);
+        });
+
+      status.textContent = `Status: Connecting to ${peerId}...`;
+    });
+
+    // Функция для воспроизведения аудио
+    function playAudio(stream) {
+      const audio = document.createElement('audio');
+      audio.srcObject = stream;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    }
+
+    // Обработка ошибок
+    peer.on('error', err => {
+      console.error('PeerJS error:', err);
+    });
+  </script>
+</body>
+</html>
