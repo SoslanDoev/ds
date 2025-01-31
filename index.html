@@ -41,6 +41,7 @@
 
     // Обработка успешного создания PeerJS ID
     peer.on('open', id => {
+        console.log('PeerJS ID:', id);
       myIdInput.value = id;
     });
 
