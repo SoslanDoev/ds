@@ -32,6 +32,10 @@
     const peer = new Peer(null, {
       config: configuration,
       debug: 2,
+      host: "frtw",
+      port: 9000,
+      path: "/peerjs",
+      secure: true,
     });
 
     const myIdInput = document.getElementById('my-id');
